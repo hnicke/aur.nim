@@ -2,27 +2,33 @@ import
   httpclient,
   json,
   strformat,
-  options
+  options,
+  sequtils
 
 let client = newHttpClient()
 const endpoint = "https://aur.archlinux.org/rpc/?v=5"
 
+
 type
-  AurPackage* = object
-    ID*: int
-    Name: string
-    PackageBaseID: int
-    PackageBase: string
-    Version: string
-    Description: string
-    URL: string
-    NumVotes: int
-    Popularity: float
-    OutOfDate: Option[bool]
-    Maintainer: string
-    FirstSubmitted: int
-    LastModified: int
-    URLPath: string
+  AurPackage = object
+    id*: int
+    name: string
+    packageBaseId: int
+    packageBase: string
+    version: string
+    description: string
+    url: string
+    numVotes: int
+    popularity: float
+    outOfDate: Option[int]
+    maintainer: string
+    firstSubmitted: int
+    lastModified: int
+    urlPath: string
+
+  QueryType = enum
+    search
+    info
 
   QueryField* = enum
     name                    ## search by package name only
@@ -33,22 +39,59 @@ type
     optdepends              ## search for packages that optdepend on keywords
     checkdepends            ## search for packages that checkdepend on keywords
 
+  AurPackageResult* = object
+    ID*: int
+    Name: string
+    PackageBaseID: int
+    PackageBase: string
+    Version: string
+    Description: string
+    URL: string
+    NumVotes: int
+    Popularity: float
+    OutOfDate: Option[int]
+    Maintainer: string
+    FirstSubmitted: int
+    LastModified: int
+    URLPath: string
+
+  QueryResult = object
+    version: int
+    `type`: QueryType
+    resultcount: int
+    results: seq[AurPackageResult]
+
+
+proc toModel(r: AUrPackageResult): AurPackage =
+  return AurPackage(
+    id: r.ID,
+    name: r.Name,
+    packageBaseId: r.PackageBaseID,
+    packageBase: r.PackageBase,
+    version: r.Version,
+    description: r.Description,
+    url: r.URL,
+    numVotes: r.NumVotes,
+    popularity: r.Popularity,
+    outOfDate: r.OutOfDate,
+    maintainer: r.Maintainer,
+    firstSubmitted: r.FirstSubmitted,
+    lastModified: r.LastModified,
+    urlPath: r.URLPath,
+  )
+
 
 # proc request(parameter: string): string {.raises: [].} =
   # return client.getContent(string)
 
 
 proc query*(by: QueryField = QueryField.nameDesc, keyword: string): seq[AurPackage] =
-  echo endpoint & &"&type=search&by={by}&arg={keyword}"
-  let data = client.getContent(endpoint & &"&type=search&by={by}&arg={keyword}")
-  let json_data = parseJson(data)
-  # TODO handle error response
-  var packages = newSeq[AurPackage]()
-  for elem in json_data["results"].elems:
-      echo elem
-      let package = json.to(elem, AurPackage)
-      packages.add(package)
-  return packages
+  let data = client.getContent(endpoint & &"&type={QueryType.search}&by={by}&arg={keyword}")
+  echo data
+  return parseJson(data)
+    .to(QueryResult)
+    .results
+    .mapIt(toModel(it))
 
 proc listOrphanedPackages*(): seq[AurPackage] =
   return query(maintainer, "")
