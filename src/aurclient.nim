@@ -46,8 +46,8 @@ type
     Checkdepends = "checkdepends"
     ## search for packages that checkdepend on keywords
 
-  AurPackageResult* = object
-    ID*: int
+  AurPackageResult = object
+    ID: int
     Name: string
     PackageBaseID: int
     PackageBase: string
