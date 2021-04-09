@@ -1,13 +1,13 @@
 import
   httpclient,
   json,
-  strformat,
   options,
-  sequtils
+  sequtils,
+  uri
+
 
 let client = newHttpClient()
-const endpoint = "https://aur.archlinux.org/rpc/?v=5"
-
+const endpoint = parseUri("https://aur.archlinux.org/rpc")
 
 type
   AurPackage* = object
@@ -69,7 +69,7 @@ type
     results: seq[AurPackageResult]
 
 
-proc toModel(r: AUrPackageResult): AurPackage =
+func toModel(r: AUrPackageResult): AurPackage =
   return AurPackage(
     id: r.ID,
     name: r.Name,
@@ -92,13 +92,15 @@ proc toModel(r: AUrPackageResult): AurPackage =
   # return client.getContent(string)
 
 
+# TODO: for better testability, separate parsing from http request
+# TODO: declare raised exceptions
 proc query*(by: QueryField = NameDesc, keyword: string): seq[AurPackage] =
-  let data = client.getContent(endpoint &
-      &"&type={Search}&by={by}&arg={keyword}")
-  return parseJson(data)
+  let uri = endpoint ? {"v": $5, "type": $Search, "by": $by, "arg": keyword}
+  return client.getContent($uri)
+    .parseJson()
     .to(QueryResult)
     .results
     .map(toModel)
 
-proc listOrphanedPackages*(): seq[AurPackage] =
+proc queryOrphanedPackages*(): seq[AurPackage] =
   return query(Maintainer, "")
