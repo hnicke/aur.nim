@@ -9,7 +9,7 @@ srcDir        = "src"
 
 # Dependencies
 
-requires "nim >= 1.4.4"
+requires "nim >= 1.4.0"
 
 task fmt, "format the codebase":
     exec r"git ls-files . | grep '\.nim$' | xargs nimpretty"
