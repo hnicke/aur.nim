@@ -1,4 +1,4 @@
-import 
+import
   httpclient,
   json,
   strformat,
@@ -32,7 +32,7 @@ type
 
   QueryField* {.pure.} = enum
     Name = "name"
-    ## search by package name only 
+    ## search by package name only
     NameDesc = "name-desc"
     ## search by package name and description
     Maintainer = "maintainer"
@@ -93,7 +93,8 @@ proc toModel(r: AUrPackageResult): AurPackage =
 
 
 proc query*(by: QueryField = NameDesc, keyword: string): seq[AurPackage] =
-  let data = client.getContent(endpoint & &"&type={Search}&by={by}&arg={keyword}")
+  let data = client.getContent(endpoint &
+      &"&type={Search}&by={by}&arg={keyword}")
   return parseJson(data)
     .to(QueryResult)
     .results
