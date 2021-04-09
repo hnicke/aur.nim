@@ -21,39 +21,30 @@ type
 
   AurPackage* = object of RootObj
     id*: int
-    name: string
-    pkgBaseId: int
-    pkgBase: string
-    version: string
-    description: string
-    url: string
-    numVotes: int
-    popularity: float
-    outOfDate: Option[DateTime]
-    maintainer: string
-    firstSubmitted: DateTime
-    lastModified: DateTime
-    urlPath: Uri
+    name*: string
+    pkgBaseId*: int
+    pkgBase*: string
+    version*: string
+    description*: string
+    url*: string
+    numVotes*: int
+    popularity*: float
+    outOfDate*: Option[DateTime]
+    maintainer*: string
+    firstSubmitted*: DateTime
+    lastModified*: DateTime
+    urlPath*: Uri
 
   AurPackageInfo* = object of AurPackage
-    depends: seq[string]
-    makeDepends: seq[string]
-    optDepends: seq[string]
-    conflicts: seq[string]
-    provides: seq[string]
-    replaces: seq[string]
-    groups: seq[string]
-    licence: seq[string]
-    keywords: seq[string]
-
-  QueryType {.pure.} = enum
-    Search = "search"
-    Info = "info"
-
-  ResultType {.pure.} = enum
-    Search = "search"
-    Info = "multiinfo"
-    Error = "error"
+    depends*: seq[string]
+    makeDepends*: seq[string]
+    optDepends*: seq[string]
+    conflicts*: seq[string]
+    provides*: seq[string]
+    replaces*: seq[string]
+    groups*: seq[string]
+    licence*: seq[string]
+    keywords*: seq[string]
 
   QueryBy* {.pure.} = enum
     Name = "name"
@@ -70,6 +61,16 @@ type
     ## search for packages that optdepend on keywords
     Checkdepends = "checkdepends"
     ## search for packages that checkdepend on keywords
+
+
+  QueryType {.pure.} = enum
+    Search = "search"
+    Info = "info"
+
+  ResultType {.pure.} = enum
+    Search = "search"
+    Info = "multiinfo"
+    Error = "error"
 
   PackageSearchResult = object of RootObj
     ID: int
