@@ -13,11 +13,12 @@ let client = newHttpClient()
 const apiVersion = 5
 const endpoint = parseUri("https://aur.archlinux.org/rpc")
 
+# TODO Add documentation for publicly exposed members
+
 type
   AurQueryError* = object of CatchableError
   AurInvalidSearchKeywordError* = object of AurQueryError
 
-  # TODO use date types for lastModified, firstSubmitted, outOfDate
   AurPackage* = object of RootObj
     id*: int
     name: string
@@ -44,9 +45,6 @@ type
     groups: seq[string]
     licence: seq[string]
     keywords: seq[string]
-
-
-
 
   QueryType {.pure.} = enum
     Search = "search"
@@ -193,3 +191,5 @@ proc info*(packageNames: seq[string]): seq[AurPackage] =
             .map(toModel)
   else:
     raise newException(AurQueryError, infoResult.error.get())
+
+proc info*(packageNames: varargs[string]): seq[AurPackage] = info(@packageNames)

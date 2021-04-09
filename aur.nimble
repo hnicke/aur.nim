@@ -1,7 +1,7 @@
 # Package
 
 version       = "0.1.0"
-author        = "Heiko Nickerl"
+author        = "hnicke"
 description   = "A client for the Arch Linux User Repository (AUR)"
 license       = "MIT"
 srcDir        = "src"
