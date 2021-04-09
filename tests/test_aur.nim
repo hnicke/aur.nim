@@ -3,25 +3,25 @@ import options
 
 import aur
 test "search package":
-  let packages = search(Name, "google-chrome")
-  check packages.len != 0
+  let pkgs = search(Name, "google-chrome")
+  check pkgs.len != 0
 
 test "search package fails when keyword length is < 2":
   expect AurInvalidSearchKeywordError:
     discard search(Maintainer, "a")
 
 test "get info for packages":
-  let packages = info(["google-chrome", "sodalite"])
-  check packages.len == 2
+  let pkgs = info(["google-chrome", "sodalite"])
+  check pkgs.len == 2
 
 test "get info for packages (varags)":
-  let packages = info("google-chrome", "sodalite")
-  check packages.len == 2
+  let pkgs = info("google-chrome", "sodalite")
+  check pkgs.len == 2
 
 test "get info for single package":
-  let package = info("google-chrome")
-  check package.isSome
+  let pkg = info("google-chrome")
+  check pkg.isSome
 
 test "get info for non-existent single package":
-  let package = info("medoesntexist.123")
-  check package.isNone
+  let pkg = info("medoesntexist.123")
+  check pkg.isNone

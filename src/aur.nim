@@ -22,8 +22,8 @@ type
   AurPackage* = object of RootObj
     id*: int
     name: string
-    packageBaseId: int
-    packageBase: string
+    pkgBaseId: int
+    pkgBase: string
     version: string
     description: string
     url: string
@@ -116,8 +116,8 @@ proc toModel(r: PackageSearchResult): AurPackage =
   return AurPackage(
     id: r.ID,
     name: r.Name,
-    packageBaseId: r.PackageBaseID,
-    packageBase: r.PackageBase,
+    pkgBaseId: r.PackageBaseID,
+    pkgBase: r.PackageBase,
     version: r.Version,
     description: r.Description,
     url: r.URL,
@@ -134,8 +134,8 @@ proc toModel(r: PackageInfoResult): AurPackageInfo =
   return AurPackageInfo(
     id: r.ID,
     name: r.Name,
-    packageBaseId: r.PackageBaseID,
-    packageBase: r.PackageBase,
+    pkgBaseId: r.PackageBaseID,
+    pkgBase: r.PackageBase,
     version: r.Version,
     description: r.Description,
     url: r.URL,
@@ -179,8 +179,8 @@ proc search*(by: QueryBy = NameDesc, keyword: string): seq[AurPackage] =
       )
 
 
-proc info*(packageNames: seq[string]): seq[AurPackage] =
-  let params = @[("v", $apiVersion), ("type", $QueryType.Info)] & packageNames.map(x => ("arg[]", x))
+proc info*(pkgNames: seq[string]): seq[AurPackage] =
+  let params = @[("v", $apiVersion), ("type", $QueryType.Info)] & pkgNames.map(x => ("arg[]", x))
   let uri = endpoint ? params
   let infoResult = client.getContent($uri)
     .parseJson()
@@ -192,11 +192,11 @@ proc info*(packageNames: seq[string]): seq[AurPackage] =
   else:
     raise newException(AurQueryError, infoResult.error.get())
 
-proc info*(packageNames: varargs[string]): seq[AurPackage] = info(@packageNames)
+proc info*(pkgNames: varargs[string]): seq[AurPackage] = info(@pkgNames)
 
-proc info*(packageName: string): Option[AurPackage] = 
-  let packages = info([packageName])
-  if packages.len >= 1:
-    return packages[0].some
+proc info*(pkgName: string): Option[AurPackage] = 
+  let pkgs = info([pkgName])
+  if pkgs.len >= 1:
+    return pkgs[0].some
   else:
     return none(AurPackage)
