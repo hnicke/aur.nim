@@ -2,5 +2,5 @@ import unittest
 
 import aurclient
 test "fetch package":
-  let packages = query(QueryField.name, "google-chrome")
+  let packages = query(Name, "google-chrome")
   check packages.len != 0

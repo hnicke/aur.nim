@@ -10,7 +10,7 @@ const endpoint = "https://aur.archlinux.org/rpc/?v=5"
 
 
 type
-  AurPackage = object
+  AurPackage* = object
     id*: int
     name: string
     packageBaseId: int
@@ -26,18 +26,25 @@ type
     lastModified: int
     urlPath: string
 
-  QueryType = enum
-    search
-    info
+  QueryType {.pure.} = enum
+    Search = "search"
+    Info = "info"
 
-  QueryField* = enum
-    name                    ## search by package name only
-    nameDesc  = "name-desc" ## search by package name and description
-    maintainer              ## search by package maintainer
-    depends                 ## search for packages that depend on keywords
-    makedepends             ## search for packages that makedepend on keywords
-    optdepends              ## search for packages that optdepend on keywords
-    checkdepends            ## search for packages that checkdepend on keywords
+  QueryField* {.pure.} = enum
+    Name = "name"
+    ## search by package name only 
+    NameDesc = "name-desc"
+    ## search by package name and description
+    Maintainer = "maintainer"
+    ## search by package maintainer
+    Depends = "depends"
+    ## search for packages that depend on keywords
+    Makedepends = "makedepends"
+    ## search for packages that makedepend on keywords
+    Optdepends = "optdepends"
+    ## search for packages that optdepend on keywords
+    Checkdepends = "checkdepends"
+    ## search for packages that checkdepend on keywords
 
   AurPackageResult* = object
     ID*: int
@@ -85,12 +92,12 @@ proc toModel(r: AUrPackageResult): AurPackage =
   # return client.getContent(string)
 
 
-proc query*(by: QueryField = QueryField.nameDesc, keyword: string): seq[AurPackage] =
-  let data = client.getContent(endpoint & &"&type={QueryType.search}&by={by}&arg={keyword}")
+proc query*(by: QueryField = NameDesc, keyword: string): seq[AurPackage] =
+  let data = client.getContent(endpoint & &"&type={Search}&by={by}&arg={keyword}")
   return parseJson(data)
     .to(QueryResult)
     .results
     .map(toModel)
 
 proc listOrphanedPackages*(): seq[AurPackage] =
-  return query(maintainer, "")
+  return query(Maintainer, "")
