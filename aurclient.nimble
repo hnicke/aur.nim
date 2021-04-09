@@ -14,3 +14,6 @@ requires "nim >= 1.4.4"
 task fmt, "format the codebase":
     exec r"git ls-files . | grep '\.nim$' | xargs nimpretty"
     echo "Formatted source code"
+
+task clean, "remove build artifacts":
+    rmDir(thisDir() & "/out")
