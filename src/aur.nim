@@ -193,3 +193,10 @@ proc info*(packageNames: seq[string]): seq[AurPackage] =
     raise newException(AurQueryError, infoResult.error.get())
 
 proc info*(packageNames: varargs[string]): seq[AurPackage] = info(@packageNames)
+
+proc info*(packageName: string): Option[AurPackage] = 
+  let packages = info([packageName])
+  if packages.len >= 1:
+    return packages[0].some
+  else:
+    return none(AurPackage)

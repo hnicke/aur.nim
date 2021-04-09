@@ -1,4 +1,5 @@
 import unittest
+import options
 
 import aur
 test "search package":
@@ -9,10 +10,18 @@ test "search package fails when keyword length is < 2":
   expect AurInvalidSearchKeywordError:
     discard search(Maintainer, "a")
 
-test "get info for package":
-  let packages = info(@["google-chrome"])
-  check packages.len == 1
-
 test "get info for packages":
+  let packages = info(["google-chrome", "sodalite"])
+  check packages.len == 2
+
+test "get info for packages (varags)":
   let packages = info("google-chrome", "sodalite")
   check packages.len == 2
+
+test "get info for single package":
+  let package = info("google-chrome")
+  check package.isSome
+
+test "get info for non-existent single package":
+  let package = info("medoesntexist.123")
+  check package.isNone
