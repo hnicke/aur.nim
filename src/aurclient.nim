@@ -3,14 +3,22 @@ import
   json,
   options,
   sequtils,
-  uri
+  uri,
+  strformat,
+  times,
+  sugar
 
 
 let client = newHttpClient()
+const apiVersion = 5
 const endpoint = parseUri("https://aur.archlinux.org/rpc")
 
 type
-  AurPackage* = object
+  AurQueryError* = object of CatchableError
+  AurInvalidSearchKeywordError* = object of AurQueryError
+
+  # TODO use date types for lastModified, firstSubmitted, outOfDate
+  AurPackage* = object of RootObj
     id*: int
     name: string
     packageBaseId: int
@@ -20,17 +28,36 @@ type
     url: string
     numVotes: int
     popularity: float
-    outOfDate: Option[int]
+    outOfDate: Option[DateTime]
     maintainer: string
-    firstSubmitted: int
-    lastModified: int
-    urlPath: string
+    firstSubmitted: DateTime
+    lastModified: DateTime
+    urlPath: Uri
+
+  AurPackageInfo* = object of AurPackage
+    depends: seq[string]
+    makeDepends: seq[string]
+    optDepends: seq[string]
+    conflicts: seq[string]
+    provides: seq[string]
+    replaces: seq[string]
+    groups: seq[string]
+    licence: seq[string]
+    keywords: seq[string]
+
+
+
 
   QueryType {.pure.} = enum
     Search = "search"
     Info = "info"
 
-  QueryField* {.pure.} = enum
+  ResultType {.pure.} = enum
+    Search = "search"
+    Info = "multiinfo"
+    Error = "error"
+
+  QueryBy* {.pure.} = enum
     Name = "name"
     ## search by package name only
     NameDesc = "name-desc"
@@ -46,7 +73,7 @@ type
     Checkdepends = "checkdepends"
     ## search for packages that checkdepend on keywords
 
-  AurPackageResult = object
+  PackageSearchResult = object of RootObj
     ID: int
     Name: string
     PackageBaseID: int
@@ -62,14 +89,32 @@ type
     LastModified: int
     URLPath: string
 
+  PackageInfoResult = object of PackageSearchResult
+    Depends: seq[string]
+    MakeDepends: seq[string]
+    OptDepends: seq[string]
+    Conflicts: seq[string]
+    Provides: seq[string]
+    Replaces: seq[string]
+    Groups: seq[string]
+    Licence: seq[string]
+    Keywords: seq[string]
+
   QueryResult = object
     version: int
-    `type`: QueryType
+    `type`: ResultType
     resultcount: int
-    results: seq[AurPackageResult]
+    results: seq[PackageSearchResult]
+    error: Option[string]
 
+  InfoResult = object
+    version: int
+    `type`: ResultType
+    resultcount: int
+    results: seq[PackageSearchResult]
+    error: Option[string]
 
-func toModel(r: AUrPackageResult): AurPackage =
+proc toModel(r: PackageSearchResult): AurPackage =
   return AurPackage(
     id: r.ID,
     name: r.Name,
@@ -80,27 +125,71 @@ func toModel(r: AUrPackageResult): AurPackage =
     url: r.URL,
     numVotes: r.NumVotes,
     popularity: r.Popularity,
-    outOfDate: r.OutOfDate,
+    outOfDate: r.OutOfDate.map(x => x.fromUnix().inZone(utc())),
     maintainer: r.Maintainer,
-    firstSubmitted: r.FirstSubmitted,
-    lastModified: r.LastModified,
-    urlPath: r.URLPath,
+    firstSubmitted: r.FirstSubmitted.fromUnix().inZone(utc()),
+    lastModified: r.LastModified.fromUnix().inZone(utc()),
+    urlPath: parseUri(r.URLPath),
   )
 
+proc toModel(r: PackageInfoResult): AurPackageInfo =
+  return AurPackageInfo(
+    id: r.ID,
+    name: r.Name,
+    packageBaseId: r.PackageBaseID,
+    packageBase: r.PackageBase,
+    version: r.Version,
+    description: r.Description,
+    url: r.URL,
+    numVotes: r.NumVotes,
+    popularity: r.Popularity,
+    outOfDate: r.OutOfDate.map(x => x.fromUnix().inZone(utc())),
+    maintainer: r.Maintainer,
+    firstSubmitted: r.FirstSubmitted.fromUnix().inZone(utc()),
+    lastModified: r.LastModified.fromUnix().inZone(utc()),
+    urlPath: parseUri(r.URLPath),
+    depends: r.Depends,
+    makeDepends: r.MakeDepends,
+    optDepends: r.OptDepends,
+    conflicts: r.Conflicts,
+    provides: r.Provides,
+    replaces: r.Replaces,
+    groups: r.Groups,
+    licence: r.Licence,
+    keywords: r.Keywords,
+  )
 
-# proc request(parameter: string): string {.raises: [].} =
-  # return client.getContent(string)
-
-
-# TODO: for better testability, separate parsing from http request
 # TODO: declare raised exceptions
-proc query*(by: QueryField = NameDesc, keyword: string): seq[AurPackage] =
-  let uri = endpoint ? {"v": $5, "type": $Search, "by": $by, "arg": keyword}
-  return client.getContent($uri)
-    .parseJson()
-    .to(QueryResult)
-    .results
-    .map(toModel)
+proc search*(by: QueryBy = NameDesc, keyword: string): seq[AurPackage] =
+  if keyword.len > 1:
+    let params = {"v": $apiVersion, "type": $QueryType.Search,
+                  "by": $by, "arg": keyword}
+    let uri = endpoint ? params
+    let queryResult = client.getContent($uri)
+      .parseJson()
+      .to(QueryResult)
+    if queryResult.error.isNone:
+      queryResult
+        .results
+        .map(toModel)
+    else:
+      raise newException(AurQueryError, queryResult.error.get())
+  else:
+    raise newException(
+        AurInvalidSearchKeywordError,
+        &"keyword must be at least 2 chars long (was '{keyword}')"
+      )
 
-proc queryOrphanedPackages*(): seq[AurPackage] =
-  return query(Maintainer, "")
+
+proc info*(packageNames: seq[string]): seq[AurPackage] =
+  let params = @[("v", $apiVersion), ("type", $QueryType.Info)] & packageNames.map(x => ("arg[]", x))
+  let uri = endpoint ? params
+  let infoResult = client.getContent($uri)
+    .parseJson()
+    .to(InfoResult)
+  if infoResult.error.isNone:
+    return infoResult
+            .results
+            .map(toModel)
+  else:
+    raise newException(AurQueryError, infoResult.error.get())
