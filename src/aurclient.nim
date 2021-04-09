@@ -87,11 +87,10 @@ proc toModel(r: AUrPackageResult): AurPackage =
 
 proc query*(by: QueryField = QueryField.nameDesc, keyword: string): seq[AurPackage] =
   let data = client.getContent(endpoint & &"&type={QueryType.search}&by={by}&arg={keyword}")
-  echo data
   return parseJson(data)
     .to(QueryResult)
     .results
-    .mapIt(toModel(it))
+    .map(toModel)
 
 proc listOrphanedPackages*(): seq[AurPackage] =
   return query(maintainer, "")
