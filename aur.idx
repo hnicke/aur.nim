@@ -1,0 +1,9 @@
+AurPackage	aur.html#AurPackage	aur: AurPackage	
+AurPackageInfo	aur.html#AurPackageInfo	aur: AurPackageInfo	
+QueryBy	aur.html#QueryBy	aur: QueryBy	
+QueryError	aur.html#QueryError	aur: QueryError	
+IllegalKeywordError	aur.html#IllegalKeywordError	aur: IllegalKeywordError	
+search	aur.html#search,QueryBy,string	aur: search(by: QueryBy = NameDesc; keyword: string): seq[AurPackage]	
+info	aur.html#info,seq[string]	aur: info(pkgNames: seq[string]): seq[AurPackageInfo]	
+info	aur.html#info,varargs[string]	aur: info(pkgNames: varargs[string]): seq[AurPackageInfo]	
+info	aur.html#info,string	aur: info(pkgName: string): Option[AurPackageInfo]	
