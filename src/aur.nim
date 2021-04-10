@@ -1,3 +1,28 @@
+##[  
+# Usage
+
+This is a nim client for the [Arch User Repository](https://aur.archlinux.org/) (AUR).
+
+It's a simple wrapper around the [Aurweb RPC interface](https://wiki.archlinux.org/index.php/Aurweb_RPC_interface) which allows searching the AUR for information about packages.
+
+```nim
+import aur, options
+
+# retrieve information about a specific package
+let pkg = info("google-chrome")
+if pkg.isSome:
+    echo pkg.get().description
+    echo pkg.get().numVotes
+    echo pkg.get().maintainer
+
+# search for packages
+let pkgs = search(QueryBy.Maintainer, keyword="luzifer")
+for pkg in pkgs:
+    echo pkg.name 
+    echo pkg.description
+```
+
+]##
 import
   httpclient,
   json,
