@@ -19,7 +19,7 @@ task clean, "remove build artifacts":
     rmDir(thisDir() & "/out")
 
 task docgen, "generate docs":
-    selfExec "doc --git.url:https://github.com/hnicke/aur.nim --git.commit:0.1.0 --outdir:docs src/aur.nim"
+    selfExec "doc --git.url:https://github.com/hnicke/aur.nim --git.commit:master --git.devel=master src/aur.nim"
 
 task docopen, "open docs":
-    exec "xdg-open docs/aur.html"
+    exec "xdg-open out/aur.html"

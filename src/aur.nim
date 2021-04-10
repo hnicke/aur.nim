@@ -13,10 +13,9 @@ let client = newHttpClient()
 const apiVersion = 5
 const endpoint = parseUri("https://aur.archlinux.org/rpc")
 
-# TODO Add documentation for publicly exposed members
-
 type
   AurPackage* = object of RootObj
+    ## Package information.
     id*: int
     name*: string
     pkgBaseId*: int
@@ -33,6 +32,7 @@ type
     urlPath*: Uri
 
   AurPackageInfo* = object of AurPackage
+    ## Detailed package information.
     depends*: seq[string]
     makeDepends*: seq[string]
     optDepends*: seq[string]
@@ -44,23 +44,31 @@ type
     keywords*: seq[string]
 
   QueryBy* {.pure.} = enum
+    ## Search criteria.
+    ## 
+    ## ``Name`` Search by package name only.
+    ## 
+    ## ``NameDesc`` Search by package name and description.
+    ## 
+    ## ``Maintainer`` Search by package maintainer.
+    ## 
+    ## ``Depends`` Search for packages that depend on keywords.
+    ## 
+    ## ``Makedepends`` Search for packages that makedepend on keywords.
+    ## 
+    ## ``Optdepends`` Search for packages that optdepend on keywords.
+    ## 
+    ## ``Checkdepends`` Search for packages that checkdepend on keywords.
     Name = "name"
-    ## search by package name only
     NameDesc = "name-desc"
-    ## search by package name and description
     Maintainer = "maintainer"
-    ## search by package maintainer
     Depends = "depends"
-    ## search for packages that depend on keywords
     Makedepends = "makedepends"
-    ## search for packages that makedepend on keywords
     Optdepends = "optdepends"
-    ## search for packages that optdepend on keywords
     Checkdepends = "checkdepends"
-    ## search for packages that checkdepend on keywords
   
   QueryError* = object of CatchableError
-    ## Raised if the AUR responsed with an application level error
+    ## Raised if the AUR responded with an application level error.
 
   IllegalKeywordError* = object of QueryError
     ## Raised if a supplied search keyword length is shorter than 2 charcters
