@@ -16,9 +16,6 @@ const endpoint = parseUri("https://aur.archlinux.org/rpc")
 # TODO Add documentation for publicly exposed members
 
 type
-  AurQueryError* = object of CatchableError
-  AurInvalidSearchKeywordError* = object of AurQueryError
-
   AurPackage* = object of RootObj
     id*: int
     name*: string
@@ -61,7 +58,12 @@ type
     ## search for packages that optdepend on keywords
     Checkdepends = "checkdepends"
     ## search for packages that checkdepend on keywords
+  
+  QueryError* = object of CatchableError
+    ## Raised if the AUR responsed with an application level error
 
+  IllegalKeywordError* = object of QueryError
+    ## Raised if a supplied search keyword length is shorter than 2 charcters
 
   QueryType {.pure.} = enum
     Search = "search"
@@ -89,15 +91,15 @@ type
     URLPath: string
 
   PackageInfoResult = object of PackageSearchResult
-    Depends: seq[string]
-    MakeDepends: seq[string]
-    OptDepends: seq[string]
-    Conflicts: seq[string]
-    Provides: seq[string]
-    Replaces: seq[string]
-    Groups: seq[string]
-    Licence: seq[string]
-    Keywords: seq[string]
+    Depends: Option[seq[string]]
+    MakeDepends: Option[seq[string]]
+    OptDepends: Option[seq[string]]
+    Conflicts: Option[seq[string]]
+    Provides: Option[seq[string]]
+    Replaces: Option[seq[string]]
+    Groups: Option[seq[string]]
+    Licence: Option[seq[string]]
+    Keywords: Option[seq[string]]
 
   QueryResult = object
     version: int
@@ -110,7 +112,7 @@ type
     version: int
     `type`: ResultType
     resultcount: int
-    results: seq[PackageSearchResult]
+    results: seq[PackageInfoResult]
     error: Option[string]
 
 proc toModel(r: PackageSearchResult): AurPackage =
@@ -147,19 +149,23 @@ proc toModel(r: PackageInfoResult): AurPackageInfo =
     firstSubmitted: r.FirstSubmitted.fromUnix().inZone(utc()),
     lastModified: r.LastModified.fromUnix().inZone(utc()),
     urlPath: parseUri(r.URLPath),
-    depends: r.Depends,
-    makeDepends: r.MakeDepends,
-    optDepends: r.OptDepends,
-    conflicts: r.Conflicts,
-    provides: r.Provides,
-    replaces: r.Replaces,
-    groups: r.Groups,
-    licence: r.Licence,
-    keywords: r.Keywords,
+    depends: r.Depends.get(@[]),
+    makeDepends: r.MakeDepends.get(@[]),
+    optDepends: r.OptDepends.get(@[]),
+    conflicts: r.Conflicts.get(@[]),
+    provides: r.Provides.get(@[]),
+    replaces: r.Replaces.get(@[]),
+    groups: r.Groups.get(@[]),
+    licence: r.Licence.get(@[]),
+    keywords: r.Keywords.get(@[]),
   )
 
-# TODO: declare raised exceptions
 proc search*(by: QueryBy = NameDesc, keyword: string): seq[AurPackage] =
+  ## Search the AUR for packages.
+  ## 
+  ## ``by`` specifies the search criteria, defaults to NameDesc.
+  ## 
+  ## ``keyword`` the keyword to search for.
   if keyword.len > 1:
     let params = {"v": $apiVersion, "type": $QueryType.Search,
                   "by": $by, "arg": keyword}
@@ -172,15 +178,17 @@ proc search*(by: QueryBy = NameDesc, keyword: string): seq[AurPackage] =
         .results
         .map(toModel)
     else:
-      raise newException(AurQueryError, queryResult.error.get())
+      raise newException(QueryError, queryResult.error.get())
   else:
     raise newException(
-        AurInvalidSearchKeywordError,
+        IllegalKeywordError,
         &"keyword must be at least 2 chars long (was '{keyword}')"
       )
 
-
-proc info*(pkgNames: seq[string]): seq[AurPackage] =
+proc info*(pkgNames: seq[string]): seq[AurPackageInfo] =
+  ## Retrieve detailed package information for each package in ``pkgNames``.
+  ## 
+  ## Under the hood, issues only one request to the AUR.
   let params = @[("v", $apiVersion), ("type", $QueryType.Info)] & pkgNames.map(x => ("arg[]", x))
   let uri = endpoint ? params
   let infoResult = client.getContent($uri)
@@ -191,13 +199,15 @@ proc info*(pkgNames: seq[string]): seq[AurPackage] =
             .results
             .map(toModel)
   else:
-    raise newException(AurQueryError, infoResult.error.get())
+    raise newException(QueryError, infoResult.error.get())
 
-proc info*(pkgNames: varargs[string]): seq[AurPackage] = info(@pkgNames)
+proc info*(pkgNames: varargs[string]): seq[AurPackageInfo] = info(@pkgNames)
+  ## Retrieve detailed package information for each package in ``pkgNames``.
+  ## 
+  ## Under the hood, issues only one request to the AUR.
 
-proc info*(pkgName: string): Option[AurPackage] = 
+proc info*(pkgName: string): Option[AurPackageInfo] = 
+  ## Retrieve detailed package information for package ``pkgName``.
   let pkgs = info([pkgName])
   if pkgs.len >= 1:
     return pkgs[0].some
-  else:
-    return none(AurPackage)

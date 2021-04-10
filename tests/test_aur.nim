@@ -7,7 +7,7 @@ test "search package":
   check pkgs.len != 0
 
 test "search package fails when keyword length is < 2":
-  expect AurInvalidSearchKeywordError:
+  expect IllegalKeywordError:
     discard search(Maintainer, "a")
 
 test "get info for packages":
