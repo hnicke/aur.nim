@@ -12,7 +12,7 @@ Add the following to your `.nimble` file:
 ```
 # Dependencies
 
-requires "aur >= 0.1.0"
+requires "aur >= 0.2.0"
 ```
 
 Or, to install globally to your Nimble cache run the following command:

@@ -1,6 +1,6 @@
 # Package
 
-version       = "0.1.0"
+version       = "0.2.0"
 author        = "Heiko Nickerl"
 description   = "A client for the Arch Linux User Repository (AUR)"
 license       = "MIT"
@@ -18,8 +18,8 @@ task fmt, "format the codebase":
 task clean, "remove build artifacts":
     rmDir(thisDir() & "/out")
 
-task docgen, "generate docs":
+task docGen, "generate docs":
     selfExec "doc --git.url:https://github.com/hnicke/aur.nim --git.commit:master --git.devel=master src/aur.nim"
 
-task docopen, "open docs":
+task docOpen, "open docs":
     exec "xdg-open out/aur.html"
